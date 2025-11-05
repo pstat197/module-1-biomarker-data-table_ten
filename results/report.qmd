@@ -43,8 +43,21 @@ Tasks 1-2
 
 ### Methodological variations
 
-Task 3
+a\) Repeat the analysis but carry out the entire selection procedure on a training partition 
+
+b\) Choose a larger number (more than ten) of top predictive proteins using each selection method
+
+
+c\) Use a fuzzy intersection instead of a hard intersection to combine the sets of top predictive proteins across selection methods
+
+The results show that the Fuzzy intersection model preforms better then both Hard intersection models. Yielding the highest ROC AUC and accuracy also improving sensitivity without losing specificity. Where the Hard intersection model has high specificity but the lowest specificity and AUC. Adding proteins to the Hard model makes the sensitivity match the Fuzzy model but reduces its specificity and AUC.
 
 ### Improved classifier
 
-Task 4
+The classifier from the in class example's best performing accuracy was 0.774, taken from a panel of 5 proteins. In the analyses, we explored separate modifications to:
+
+a\) Find a simpler panel that achieves comparable accuracy.
+
+The benchmarked accuracy that is from the class example is 0.774, so that is what this experiment expected to replicated. Using a function that creates combinations of 2 different proteins and feeds the data into a Support Vector Machine classifier, it is shown that a 2 protein panel that consists of RELT and DERM produce classification accuracy of 0.774, which is comparable to the in class example, which utilized a 5 protein panel and a logistic regression classifier.
+
+b\) Find an alternate panel that achieves better performing accuracy.
