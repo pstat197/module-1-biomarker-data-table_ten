@@ -43,7 +43,14 @@ Tasks 1-2
 
 ### Methodological variations
 
-Task 3
+a\) Repeat the analysis but carry out the entire selection procedure on a training partition 
+
+b\) Choose a larger number (more than ten) of top predictive proteins using each selection method
+
+
+c\) Use a fuzzy intersection instead of a hard intersection to combine the sets of top predictive proteins across selection methods
+
+The results show that the Fuzzy intersection model preforms better then both Hard intersection models. Yielding the highest ROC AUC and accuracy also improving sensitivity without losing specificity. Where the Hard intersection model has high specificity but the lowest specificity and AUC. Adding proteins to the Hard model makes the sensitivity match the Fuzzy model but reduces its specificity and AUC.
 
 ### Improved classifier
 
