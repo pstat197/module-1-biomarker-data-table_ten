@@ -89,7 +89,7 @@ biomarker_sstar <- train_df %>%
 
 # fit logistic regression model to training set
 fit <- glm(class ~ ., 
-           data = train_df, 
+           data = biomarker_sstar, 
            family = 'binomial')
 
 
@@ -98,18 +98,30 @@ fit <- glm(class ~ .,
 # biomarker_sstar for testing evaluation set
 test_eval <- test_df %>%
   select(group, any_of(proteins_sstar)) %>%
-  mutate(class = (group == 'ASD')) %>%
+  mutate(class = factor(group, levels = c("TD","ASD"))) %>%
   select(-group)
 
 
 # evaluate errors on test set
 class_metrics <- metric_set(sensitivity, 
                             specificity, 
-                            accuracy,
-                            roc_auc)
+                            accuracy, roc_auc)
 
+# metric set
 test_eval %>%
   add_predictions(fit, type = 'response') %>%
-  class_metrics(estimate = factor(pred > 0.5),
-              truth = factor(class), pred,
-              event_level = 'second')
+  mutate(pred_class = factor(pred > 0.5,
+                             levels = c(FALSE, TRUE),
+                             labels = c("TD","ASD"))) %>%
+  class_metrics(estimate = pred_class,
+                truth = class,
+                event_level = 'second',pred) |> knitr::kable()
+
+
+
+
+
+
+
+
+
