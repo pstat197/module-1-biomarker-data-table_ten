@@ -21,29 +21,33 @@ Use this as a template. Keep the headers and remove all other text. In all, your
 library(tidyverse)
 ```
 
-## Abstract
+# Abstract
 
 Write a brief one-paragraph abstract that describes the contents of your write-up.
 
-## Dataset
+# Dataset
 
 Write a brief data description, including: how data were obtained; sample characteristics; variables measured; and data preprocessing. This can be largely based on the source paper and should not exceed 1-2 paragraphs.
 
-## Summary of published analysis
+This dataset was derived from Hewitson et al. (2021), observing and measuring Serum samples from a populous of 154 individuals comprised of 76 boys with ASD and 78 typically developing (TD) boys all between the ages of 18 months to 8 years. While each sample should appropriately analyze 1,125 proteins (since 192 of the 1,317 failed quality control), the exact proteins were left unidentified in the published study yielding following analyses based on the whole populous (1,317).Here, the two primary variable measurments are Autism Diagnostic Observation Schedule Scores (ADOS) and patient-attributed protein levels. 
+
+Prior to statistical testing, minor augmentations and adjustments were made in the preprocessing phase. Here, 'V1' is rewritten as 'name', 'V2' is rewritten as 'abbreviation', and all NA-named proteins are dropped. As a means to further clean the dataset, columns with NAs are dropped to reduce sparsity, outliers are trimmed to reduce estimation-related abnormalities further in analysis, and protein levels are log transformed to standardize comparative data.
+
+# Summary of published analysis
 
 Summarize the methodology of the paper in 1-3 paragraphs. You need not explain the methods in depth as we did in class; just indicate what methods were used and how they were combined. If possible, include a diagram that depicts the methodological design. (Quarto has support for [GraphViz and Mermaid flowcharts](https://quarto.org/docs/authoring/diagrams.html).) Provide key results: the proteins selected for the classifier and the estimated accuracy.
 
-## Findings
+# Findings
 
 Summarize your findings here. I've included some subheaders in a way that seems natural to me; you can structure this section however you like.
 
-### Impact of preprocessing and outliers
+## Impact of preprocessing and outliers
 
 Log transformations are standard practice for ensuring data meets parametric assumptions for a number of hypothesis tests and statistical models. And reasonably, we can assume that a log-transformation was utilized for this exact reason. To confirm this hypothesis, we randomly selected three proteins, plotting their histograms which revealed strong right skews. We then applied the log-transformation and repeated this process for the same proteins, which produced normal and symmetric histograms. As a result, these data can be used in inference without any concern for assumption violations.
 
 Aside from non-normal, skewed data, outliers are also present. To investigate patterns within the TD and ASD groups, we utilized the 1.5 IQR rule for each of the proteins. We first examined the top ten subjects with the most outliers, revealing that those in the TD group made up 70%. To get a more holistic perspective, we transitioned into looking at an aggregated sum of all outliers across groups, revealing that ASD and TD had 3334 and 3476, respectively. These results highlight the fact that while outlying protein levels in TD present as more extreme, ASD counts are more consistent.
 
-### Methodological variations
+## Methodological variations
 
 a\) Repeat the analysis but carry out the entire selection procedure on a training partition
 
@@ -53,7 +57,7 @@ c\) Use a fuzzy intersection instead of a hard intersection to combine the sets 
 
 The results show that the Fuzzy intersection model preforms better then both Hard intersection models. Yielding the highest ROC AUC and accuracy also improving sensitivity without losing specificity. Where the Hard intersection model has high specificity but the lowest specificity and AUC. Adding proteins to the Hard model makes the sensitivity match the Fuzzy model but reduces its specificity and AUC.
 
-### Improved classifier
+## Improved classifier
 
 The classifier from the in class example's best performing accuracy was 0.774, taken from a panel of 5 proteins. In the analyses, we explored separate modifications to:
 
