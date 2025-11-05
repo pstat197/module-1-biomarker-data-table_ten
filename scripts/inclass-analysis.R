@@ -5,6 +5,13 @@ library(tidymodels)
 library(modelr)
 library(yardstick)
 load('data/biomarker-clean.RData')
+set.seed(101422)
+
+
+# pre-split the data so analyses are performed on the training set exclusively
+biomarker_split <- biomarker_clean %>% initial_split(prop = 0.8)
+train_df <- training(biomarker_split)
+test_df <- testing(biomarker_split)
 
 ## MULTIPLE TESTING
 ####################
@@ -18,7 +25,7 @@ test_fn <- function(.df){
          var.equal = F)
 }
 
-ttests_out <- biomarker_clean %>%
+ttests_out <- train_df %>%
   # drop ADOS score
   select(-ados) %>%
   # arrange in long format
@@ -47,10 +54,10 @@ proteins_s1 <- ttests_out %>%
 ##################
 
 # store predictors and response separately
-predictors <- biomarker_clean %>%
+predictors <- train_df %>%
   select(-c(group, ados))
 
-response <- biomarker_clean %>% pull(group) %>% factor()
+response <- train_df %>% pull(group) %>% factor()
 
 # fit RF
 set.seed(101422)
@@ -75,20 +82,25 @@ proteins_s2 <- rf_out$importance %>%
 # select subset of interest
 proteins_sstar <- intersect(proteins_s1, proteins_s2)
 
-biomarker_sstar <- biomarker_clean %>%
+biomarker_sstar <- train_df %>%
   select(group, any_of(proteins_sstar)) %>%
   mutate(class = (group == 'ASD')) %>%
   select(-group)
 
-# partition into training and test set
-set.seed(101422)
-biomarker_split <- biomarker_sstar %>%
-  initial_split(prop = 0.8)
-
 # fit logistic regression model to training set
 fit <- glm(class ~ ., 
-           data = training(biomarker_split), 
+           data = train_df, 
            family = 'binomial')
+
+
+# Testing Section
+
+# biomarker_sstar for testing evaluation set
+test_eval <- test_df %>%
+  select(group, any_of(proteins_sstar)) %>%
+  mutate(class = (group == 'ASD')) %>%
+  select(-group)
+
 
 # evaluate errors on test set
 class_metrics <- metric_set(sensitivity, 
@@ -96,7 +108,7 @@ class_metrics <- metric_set(sensitivity,
                             accuracy,
                             roc_auc)
 
-testing(biomarker_split) %>%
+test_eval %>%
   add_predictions(fit, type = 'response') %>%
   class_metrics(estimate = factor(pred > 0.5),
               truth = factor(class), pred,
