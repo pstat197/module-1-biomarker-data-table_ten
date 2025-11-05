@@ -1,0 +1,239 @@
+---
+title: "Biomarker Analysis"
+author: "Quinlan Wilson"
+format: html
+---
+
+```{r setup}
+# --- Load libraries ---
+library(tidyverse)
+library(infer)
+library(randomForest)
+library(tidymodels)
+library(modelr)
+library(yardstick)
+
+# --- Load data ---
+setwd("C:/Users/quinl/OneDrive/Desktop/School/PSTAT197/module-1-biomarker-data-table_ten")
+load('data/biomarker-clean.RData')
+```
+
+```{r}
+
+## MULTIPLE TESTING
+####################
+
+# function to compute tests
+test_fn <- function(.df){
+  t_test(.df, 
+         formula = level ~ group,
+         order = c('ASD', 'TD'),
+         alternative = 'two-sided',
+         var.equal = F)
+}
+
+ttests_out <- biomarker_clean %>%
+  # drop ADOS score
+  select(-ados) %>%
+  # arrange in long format
+  pivot_longer(-group, 
+               names_to = 'protein', 
+               values_to = 'level') %>%
+  # nest by protein
+  nest(data = c(level, group)) %>% 
+  # compute t tests
+  mutate(ttest = map(data, test_fn)) %>%
+  unnest(ttest) %>%
+  # sort by p-value
+  arrange(p_value) %>%
+  # multiple testing correction
+  mutate(m = n(),
+         hm = log(m) + 1/(2*m) - digamma(1),
+         rank = row_number(),
+         p.adj = m*hm*p_value/rank)
+
+# select significant proteins
+proteins_s1 <- ttests_out %>%
+  slice_min(p.adj, n = 10) %>%
+  pull(protein)
+
+
+
+
+## RANDOM FOREST
+##################
+
+# store predictors and response separately
+predictors <- biomarker_clean %>%
+  select(-c(group, ados))
+
+response <- biomarker_clean %>% pull(group) %>% factor()
+
+# fit RF
+set.seed(101422)
+rf_out <- randomForest(x = predictors, 
+                       y = response, 
+                       ntree = 1000, 
+                       importance = T)
+
+
+# compute importance scores
+proteins_s2 <- rf_out$importance %>% 
+  as_tibble() %>%
+  mutate(protein = rownames(rf_out$importance)) %>%
+  slice_max(MeanDecreaseGini, n = 10) %>%
+  pull(protein)
+## CORRELATION
+#######################
+
+corr_out <- biomarker_clean %>%
+  select(-ados) %>%
+  mutate(group = ifelse(group == "ASD", 1, 0)) %>%
+  summarise(across(-group, ~ cor(.x, group))) %>%
+  pivot_longer(everything(), names_to = "protein", values_to = "corr") %>%
+  arrange(desc(abs(corr)))
+
+proteins_s3 <- corr_out %>%
+  slice_head(n = 10)
+
+## RANK PROTEINS FROM EACH METHOD
+#######################
+
+rank_ttest <- ttests_out %>%
+  arrange(p.adj) %>%
+  mutate(rank_ttest = row_number()) %>%
+  select(protein, rank_ttest)
+
+rank_rf <- rf_out$importance %>%
+  as_tibble(rownames = "protein") %>%
+  arrange(desc(MeanDecreaseGini)) %>%
+  mutate(rank_rf = row_number()) %>%
+  select(protein, rank_rf)
+
+rank_corr <- corr_out %>%
+  mutate(rank_corr = rank(-abs(corr))) %>%
+  select(protein, rank_corr)
+
+## FIND FUZZY AND HARD INTERSECTION
+#######################
+
+fuzzy_ranks <- full_join(rank_ttest, rank_rf, by = "protein") %>%
+  full_join(rank_corr, by = "protein") %>%
+  mutate(mean_rank = rowMeans(across(starts_with("rank")))) %>%
+  arrange(mean_rank)
+
+proteins_fuzzy <- fuzzy_ranks %>%
+  slice_min(mean_rank, n = 10) %>%
+  pull(protein)
+proteins_fuzzy
+
+proteins_sstar <- intersect(proteins_s1, proteins_s2)
+proteins_sstar
+
+# Proteins that increase sensitivity
+proteins_to_add <- c("CXCL16, soluble", "Cadherin-5", "Calcineurin", "PTN")
+
+
+proteins_hard <- c(proteins_s3$protein, proteins_s1, proteins_s2)
+proteins_hard <- unique(proteins_hard)
+
+
+```
+
+```{r}
+
+# Define logistic regression function
+logistic <- function(data, model_name, seed = 101422, prop = 0.8) {
+  # Partition into training and test set
+  set.seed(seed)
+  split <- data %>% initial_split(prop = prop)
+  
+  # Fit logistic regression model
+  fit <- glm(class ~ ., data = training(split), family = 'binomial')
+  
+  # Make predictions and compute metrics
+  preds <- testing(split) %>%
+    add_predictions(fit, type = 'response') %>%
+    mutate(
+      pred_class = factor(ifelse(pred > 0.5, "TRUE", "FALSE"), levels = c("FALSE", "TRUE")),
+      class = factor(class, levels = c(FALSE, TRUE)),
+      model = model_name
+    )
+  
+  class_metrics <- metric_set(sensitivity, specificity, accuracy, roc_auc)
+  metrics <- preds %>%
+    class_metrics(truth = class, estimate = pred_class, pred, event_level = "second")
+  
+  list(preds = preds, fit = fit, metrics = metrics)
+}
+
+# Prepare datasets
+biomarker_fuzzy <- biomarker_clean %>%
+  select(group, any_of(proteins_fuzzy)) %>%
+  mutate(class = (group == "ASD")) %>%
+  select(-group)
+
+biomarker_hard <- biomarker_clean %>%
+  select(group, any_of(proteins_sstar)) %>%
+  mutate(class = (group == "ASD")) %>%
+  select(-group)
+
+biomarker_hard_updated <- biomarker_clean %>%
+  select(group, any_of(c(proteins_sstar, proteins_to_add))) %>%
+  mutate(class = (group == "ASD")) %>%
+  select(-group)
+
+
+# Run models
+res_fuzzy <- logistic(biomarker_fuzzy, model_name = "Fuzzy Intersection")
+res_hard  <- logistic(biomarker_hard, model_name = "Hard Intersection")
+res_hard_updated  <- logistic(biomarker_hard_updated, model_name = "Hard + Top Sensitivity Proteins")
+
+
+# Combine predictions and compute summary metrics
+all_preds <- bind_rows(res_fuzzy$preds, res_hard$preds, res_hard_updated$preds) %>%
+  mutate(pred = as.numeric(pred))
+
+all_metrics <- all_preds %>%
+  group_by(model) %>%
+  summarise(
+    sensitivity = sens_vec(class, pred_class),
+    specificity = spec_vec(class, pred_class),
+    accuracy = accuracy_vec(class, pred_class),
+    roc_auc = roc_auc_vec(class, 1- pred)
+  )
+
+all_metrics
+
+```
+The results show that the Fuzzy intersection model preforms better then both Hard intersection models. Yielding the higest ROC AUC and accuracy also improving sensitivity without losing specificity. Where the Hard intersection model has high specificity but the lowest specificity and AUC. Adding proteins to the Hard model makes the sensitivity match the Fuzzy model but reduces its specificity and AUC.
+```{r}
+ # Original hard intersection proteins
+proteins_core <- c("DERM", "RELT", "IgD", "FSTL1")
+
+remaining_proteins <- setdiff(proteins_hard, proteins_core)
+
+compute_metrics_seq <- function(core, add_protein) {
+  proteins <- c(core, add_protein)
+  data <- biomarker_clean %>%
+    select(group, all_of(proteins)) %>%
+    mutate(class = (group == "ASD")) %>%
+    select(-group)
+  
+  res <- logistic(data, model_name = add_protein)
+  
+  tibble(
+    protein_added = add_protein,
+    auc = res$metrics %>% filter(.metric == "roc_auc") %>% pull(.estimate),
+    sensitivity = res$metrics %>% filter(.metric == "sensitivity") %>% pull(.estimate),
+    specificity = res$metrics %>% filter(.metric == "specificity") %>% pull(.estimate)
+  )
+}
+
+# Apply sequentially for each remaining protein
+metrics_seq <- map_dfr(remaining_proteins, ~compute_metrics_seq(proteins_core, .x))
+
+metrics_seq <- metrics_seq %>% arrange(desc(auc))
+
+metrics_seq
+```
