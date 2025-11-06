@@ -1,7 +1,7 @@
 ---
 title: "Biomarkers of ASD"
-subtitle: "If you want a subtitle put it here"
-author: "List names here"
+subtitle: "PSTAT 197A Table 10"
+author: "Brooks Piper, Srinidhi Satish, Adarsh Nagar, Nicole Xu, Quinlan Wilson, Nini Yen"
 date: last-modified
 published-title: "Updated"
 editor: visual
@@ -14,37 +14,138 @@ execute:
   cache: true
 ---
 
-Use this as a template. Keep the headers and remove all other text. In all, your report can be quite short. When it is complete, render and then push changes to your team repository.
-
 ```{r}
 # load any other packages and read data here
 library(tidyverse)
 ```
 
-## Abstract
+# Abstract
 
-Write a brief one-paragraph abstract that describes the contents of your write-up.
+This report looks at potential protein biomarkers linked to Autism Spectrum Disorder (ASD) using data from Hewitson et al. (2021). The dataset includes serum samples from 154 boys—76 with ASD and 78 typically developing (TD)—with measurements for 1,317 proteins. We recreated and extended parts of the original analysis by using t-tests, random forests, and correlations to find proteins that best separate the ASD and TD groups. Logistic regression models were then built to test how well these proteins could classify subjects. We also tested how changes in the number of top proteins, data splits, and selection methods affected results. The fuzzy intersection method performed best, reaching 0.871 accuracy and 0.954 ROC AUC. A simpler two-protein SVM model and a LASSO model with 46 proteins also showed strong results, suggesting that different modeling approaches can effectively identify useful biomarkers for ASD.
 
-## Dataset
+# Dataset
 
-Write a brief data description, including: how data were obtained; sample characteristics; variables measured; and data preprocessing. This can be largely based on the source paper and should not exceed 1-2 paragraphs.
+This data set was derived from Hewitson et al. (2021), observing and measuring Serum samples from a populous of 154 individuals comprised of 76 boys with ASD and 78 typically developing (TD) boys all between the ages of 18 months to 8 years. While each sample should appropriately analyze 1,125 proteins (since 192 of the 1,317 failed quality control), the exact proteins were left unidentified in the published study yielding following analyses based on the whole populous (1,317).Here, the two primary variable measurements are Autism Diagnostic Observation Schedule Scores (ADOS) and patient-attributed protein levels.
 
-## Summary of published analysis
+Prior to statistical testing, minor augmentations and adjustments were made in the preprocessing phase. Here, 'V1' is rewritten as 'name', 'V2' is rewritten as 'abbreviation', and all NA-named proteins are dropped. As a means to further clean the data set, columns with NA's are dropped to reduce sparsity, outliers are trimmed to reduce estimation-related abnormalities further in analysis, and protein levels are log transformed to standardize comparative data.
 
-Summarize the methodology of the paper in 1-3 paragraphs. You need not explain the methods in depth as we did in class; just indicate what methods were used and how they were combined. If possible, include a diagram that depicts the methodological design. (Quarto has support for [GraphViz and Mermaid flowcharts](https://quarto.org/docs/authoring/diagrams.html).) Provide key results: the proteins selected for the classifier and the estimated accuracy.
+# Summary of published analysis
 
-## Findings
+The original SOMAcan study done by Hewitson et at. Aimed to identify biomarkers associated with Autism Spectrum Disorder (ASD) from typically developing (TD) controls. To test methodological sensitivity to design choices several model variations were explored. First we repeated the entire protein-selection on a 80% training partition before evaluating the accuracy of the model on the remaining test set. We also increased the number of top predictive proteins considered by each selection method. As well as comparing hard intersections (proteins selected by all methods) to fuzzy intersections (proteins selected by mean rank across all methods). For all methods protein selection was through three methods, t-test, random forest, and correlation. The proteins that were chosen were then put through a logistic regression model where performance was evaluated using sensitivity, specificity, accuracy, and ROC AUC.
 
-Summarize your findings here. I've included some subheaders in a way that seems natural to me; you can structure this section however you like.
+Results showed that methodological modifications impacted performance moderately. Increasing the number of top proteins beyond 10 slightly increased sensitivity without too much improvement in accuracy, with the best model using 15 proteins attaining an accuracy of 0.871. The fuzzy intersection model outperforms the hard intersection approach indicating that partially overlapping proteins are significant. Alternative modeling produced simpler and stronger models. A two protein SVM model achieved 0.774 accuracy which matches the in class results. While a lasso regularized mode got 0.839 accuracy using 46 proteins. All these findings suggest that creating/adding new and more complex features to the model improves its performance.
 
-### Impact of preprocessing and outliers
+Training and Test Set Split:
 
-Tasks 1-2
+```{mermaid}
+flowchart TD
+  A[Raw Protein Data] --> B[Preprocessing: Log-Transform + Outlier Trimming]
+  B --> C[Outlier Analysis]
+  C --> D[Split Data: 80% Training / 20% Testing]
+  D --> E[Feature Selection: t-test, Random Forest, Correlation]
+  E --> F[Train Logistic Regression on Training Set]
+```
 
-### Methodological variations
+Larger Number of Proteins:
 
-Task 3
+```{mermaid}
+flowchart TD
+  A[Raw Protein Data] --> B[Preprocessing: Log-Transform + Outlier Trimming]
+  B --> C[Feature Selection: t-test, Random Forest, Correlation]
+  C --> D[Select Top 10–40 Proteins]
+  D --> E[Hard Intersection of Selected Proteins]
+  E --> F[Train Logistic Regression Model]
+```
 
-### Improved classifier
+Fuzzy Intersection:
 
-Task 4
+```{mermaid}
+flowchart TD
+  A[Raw Protein Data] --> B[Preprocessing: Log-Transform + Outlier Trimming]
+  B --> C[Feature Selection: t-test, Random Forest, Correlation]
+  C --> D[Combine Using Fuzzy Intersection]
+  D --> E[Train Logistic Regression Model]
+```
+
+SVM with 2 Proteins:
+
+```{mermaid}
+flowchart TD
+  A[Raw Protein Data] --> B[Preprocessing: Log-Transform + Outlier Trimming]
+  B --> C[Select Two Proteins: RELT, DERM]
+  C --> D[Train Support Vector Machine Classifier]
+```
+
+LASSO Regularization:
+
+```{mermaid}
+flowchart TD
+  A[Raw Protein Data] --> B[Preprocessing: Log-Transform + Outlier Trimming]
+  B --> C[LASSO Regularization on All Proteins]
+  C --> D[Select 46 Proteins]
+  D --> E[Adjust Classification Threshold to 0.3]
+```
+
+=======
+
+In the Hewitson et al. paper, the authors first trained a random forest model 1000 times, representing a protein's importance in predicting ASD vs TD using the mean decrease in Gini Index. Each protein's importance value was then averaged over the 1000 training runs, and then the top 10 proteins based on importance value were chosen for a prediction model. The authors then used a t-test approach to find the top 10 proteins with the most significant difference between the means of the ASD and TD groups. Finally they used a correlation approach to calculate each protein’s correlation with ADOS total scores (SA + RRB), as a measure of ASD severity. The top 10 proteins based on absolute correlation coefficients were selected as predictors.
+
+After proteins were selected through each of these 3 methods, the researchers found 5 core proteins that were common to all 3 methods, leaving 13 additional proteins. They trained a baseline model using the 5 core proteins and then tested whether or not the addition of one or more of the 13 other proteins improved prediction power. This was done using a logistic regression model was used with datasets based upon the RF model, the t-test model and the correlation model, taking the subjects’ assigned group (ASD or TD) as output variables. They split the data 80:20 and then calculated the trained model's AUC on the test dataset, which was repeated 1000 times. The researchers also investigated the possible confounding factors such as ethnicity, co-morbid conditions/clinical diagnoses, age, and medication use, by splitting the dataset into two groups for each of these factors and running t-tests.
+
+The results were that they found a panel of 9 proteins: the core 5 of mitogen-activated protein kinase 14 (MAPK14), immunoglobulin D (IgD), dermatopontin (DERM), ephrin type-B receptor 2 (EPHB2), soluble urokinase-type plasminogen activator receptor (suPAR), and the additional receptor tyrosine kinase-like orphan receptor 1 \[ROR1\], platelet receptor Gl24 \[GI24\], eukaryotic translation initiation factor 4H \[elF-4H\], and arylsulfatase B \[ARSB\]. The model had an AUC = 0.860±0.064, with a sensitivity = 0.833±0.118, and specificity = 0.846±0.118
+
+# Findings
+
+## Impact of preprocessing and outliers
+
+Log transformations are standard practice for ensuring data meets parametric assumptions for a number of hypothesis tests and statistical models. And reasonably, we can assume that a log-transformation was utilized for this exact reason. To confirm this hypothesis, we randomly selected three proteins, plotting their histograms which revealed strong right skews. We then applied the log-transformation and repeated this process for the same proteins, which produced normal and symmetric histograms. As a result, these data can be used in inference without any concern for assumption violations.
+
+Aside from non-normal, skewed data, outliers are also present. To investigate patterns within the TD and ASD groups, we utilized the 1.5 IQR rule for each of the proteins. We first examined the top ten subjects with the most outliers, revealing that those in the TD group made up 70%. To get a more holistic perspective, we transitioned into looking at an aggregated sum of all outliers across groups, revealing that ASD and TD had 3334 and 3476, respectively. These results highlight the fact that while outlying protein levels in TD present as more extreme, ASD counts are more consistent.
+
+## Methodological variations
+
+a\) Repeat the analysis but carry out the entire selection procedure on a training partition
+
+In this segment, data was split 80% training set and 20% test set before the entire selection procedure, performing statistical analyses and logistic regression model-fitting on training data prior to a final comparison with the unused test set. Test evaluation metrics yielded the following:
+
+-   Sensitivity = 0.75
+
+-   Specificity = 0.80
+
+-   Accuracy ≈ 0.77
+
+-   ROC AUC ≈ 0.87
+
+The inherent expectation of evaluating metrics on unseen data may have been leaning towards lower estimates in all areas, however the above results are more indicative of the model's reasonably strong ability to identify true cases of both classes, differentiate between classes, and generate generally reliable predictions. Relative to the pre-regression partitioning methodology (in-class), these estimates across all metrics appear marginally short of the true accuracy with specificity under pre-selection partitioning performing better.Thus, while analysis was only carried out on a training partition, general accuracy in predictions on the test set remain high.
+
+b\) Choose a larger number (more than ten) of top predictive proteins using each selection method
+
+To examine how panel size affects performance, we repeated the selection process using larger sets of top predictive proteins (10–40) based on both *t*-test and random forest importance scores. The intersection of these sets was used to fit logistic regression models, and performance was evaluated on a held-out 20% test partition.
+
+| Top Proteins | Sensitivity | Specificity | Accuracy |
+|--------------|-------------|-------------|----------|
+| 10           | 0.733       | 0.812       | 0.774    |
+| 15           | 0.800       | 0.938       | 0.871    |
+| 20           | 0.867       | 0.750       | 0.806    |
+| 25           | 0.933       | 0.750       | 0.839    |
+| 30           | 0.933       | 0.750       | 0.839    |
+| 35           | 0.933       | 0.812       | 0.871    |
+| 40           | 0.933       | 0.750       | 0.839    |
+
+Accuracy remained relatively stable across models, fluctuating between **0.77 and 0.87**, while sensitivity generally increased with more proteins. Notably, using 15 or 35 top proteins yielded the highest accuracy (0.871) with strong sensitivity and specificity balance. These results suggest that expanding the protein set can improve sensitivity to ASD cases, though gains beyond 15–20 proteins offer diminishing returns. Overall, the classifier’s performance remained comparable to the in-class analysis, indicating that the original panel size was already near optimal for this dataset.
+
+c\) Use a fuzzy intersection instead of a hard intersection to combine the sets of top predictive proteins across selection methods
+
+The results show that the Fuzzy intersection model preforms better then the Hard intersection model. Yielding a sensitivity of 0.867, specificity of 0.875, accuracy of 0.871, and ROC AUC of 0.954 all of which are better than the hard intersection model. These values represent the fuzzy model being more balances and effective at distinguishing between ASD and TD subject without disproportionately favoring one group. The better performance is likely coming from its capacity to integrate partially overlapping information across selection methods(t-test, random forest, correlation test). By allowing proteins that appear in multiple but not all selection methods not risking dropping meaningful biomarkers that are emphasized by only some of the methods.
+
+## Improved classifier
+
+The classifier from the in class example's best performing accuracy was 0.774, taken from a panel of 5 proteins. In the analyses, we explored separate modifications to:
+
+a\) Find a simpler panel that achieves comparable accuracy.
+
+The benchmarked accuracy from the class example is 0.774, so that is what this experiment expected to replicated. Using a function that creates combinations of 2 different proteins and feeds the data into a Support Vector Machine classifier, it is shown that a 2 protein panel that consists of RELT and DERM produce classification accuracy of 0.774, which is comparable to the in class example, which utilized a 5 protein panel and a logistic regression classifier.
+
+b\) Find an alternate panel that achieves better performing accuracy.
+
+Instead of comparing the proteins from multiple testing and random forest, the alternative method used was lasso regularization directly on the entire dataset. After shrinking the unimportant protein coefficients to 0 by finding the lambda that minimizes the mean cross validated error, we are left with a panel of 46 proteins. Additionally, the default classification threshold was adjusted from 0.5 to 0.3. Therefore the improved classification accuracy with these changes is 0.839.

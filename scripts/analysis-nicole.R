@@ -1,0 +1,62 @@
+library(tidyverse)
+library(infer)
+library(tidymodels)
+library(modelr)
+library(yardstick)
+library(glmnet)
+load('data/biomarker-clean.RData')
+
+predictors_lasso <- biomarker_clean %>%
+  select(-c(group, ados)) %>%
+  as.matrix()
+
+response_lasso <- if_else(biomarker_clean$group == "ASD", 1, 0)
+
+# partition into training and test set
+set.seed(101422)
+split_lasso <- initial_split(biomarker_clean, prop = 0.8)
+train_data_lasso <- training(split_lasso)
+test_data_lasso  <- testing(split_lasso)
+
+x_train_lasso <- train_data_lasso %>% select(-c(group, ados)) %>% as.matrix()
+y_train_lasso <- if_else(train_data_lasso$group == "ASD", 1, 0)
+
+x_test_lasso <- test_data_lasso %>% select(-c(group, ados)) %>% as.matrix()
+y_test_lasso <- if_else(test_data_lasso$group == "ASD", 1, 0)
+
+#fit lasso regularization
+set.seed(101422)
+cvfit <- cv.glmnet(
+  x_train_lasso, y_train_lasso,
+  family = "binomial",
+  alpha = 1,       # LASSO
+  nfolds = 5
+)
+
+# lambda that minimizes cross-validated error
+lambda_min <- cvfit$lambda.min
+
+#importance
+lasso_coefs <- coef(cvfit, s = "lambda.min")
+proteins_lasso <- rownames(lasso_coefs)[lasso_coefs[,1] != 0]
+proteins_lasso <- setdiff(proteins_lasso, "(Intercept)")
+
+proteins_lasso
+
+# predicted probabilities
+test_data_lasso_pred <- test_data_lasso %>%
+  mutate(
+    pred = as.numeric(predict(cvfit, newx = x_test_lasso, s = lambda_min, type = "response")),
+    preds = factor(if_else(pred > 0.3, "ASD", "TD"), levels = c("TD", "ASD")),
+    classes = factor(if_else(y_test_lasso == 1, "ASD", "TD"), levels = c("TD", "ASD"))
+  )
+
+class_metrics <- metric_set(sensitivity, specificity, accuracy, roc_auc)
+
+class_metrics(
+  test_data_lasso_pred,
+  estimate = preds,
+  truth = classes,
+  pred,
+  event_level = "second"
+)
