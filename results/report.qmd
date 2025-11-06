@@ -33,7 +33,52 @@ Prior to statistical testing, minor augmentations and adjustments were made in t
 
 # Summary of published analysis
 
-Summarize the methodology of the paper in 1-3 paragraphs. You need not explain the methods in depth as we did in class; just indicate what methods were used and how they were combined. If possible, include a diagram that depicts the methodological design. (Quarto has support for [GraphViz and Mermaid flowcharts](https://quarto.org/docs/authoring/diagrams.html).) Provide key results: the proteins selected for the classifier and the estimated accuracy.
+The original SOMAcan study done by Hewitson et at. Aimed to identify biomarkers associated with Autism Spectrum Disorder (ASD) from typically developing (TD) controls. To test methodological sensitivity to design choices several model variations were explored. First we repeated the entire protein-selection on a 80% training partition before evaluating the accuracy of the model on the remaining test set. We also increased the number of top predictive proteins considered by each selection method. As well as comparing hard intersections (proteins selected by all methods) to fuzzy intersections (proteins selected by mean rank across all methods). For all methods protein selection was through three methods, t-test, random forest, and correlation. The proteins that were chosen were then put through a logistic regression model where performance was evaluated using sensitivity, specificity, accuracy, and ROC AUC. 
+
+Results showed that methodological modifications impacted performance moderately. Increasing the number of top proteins beyond 10 slightly increased sensitivity without too much improvement in accuracy, with the best model using 15 proteins attaining an accuracy of 0.871. The fuzzy intersection model outperforms the hard intersection approach indicating that partially overlapping proteins are significant. Alternative modeling produced simpler and stronger models. A two protein SVM model achieved 0.774 accuracy which matches the in class results. While a lasso regularized mode got 0.839 accuracy using 46 proteins. All these findings suggest that creating/adding new and more complex features to the model improves its performance. 
+
+Training and Test Set Split:
+```{mermaid}
+flowchart TD
+  A[Raw Protein Data] --> B[Preprocessing: Log-Transform + Outlier Trimming]
+  B --> C[Outlier Analysis]
+  C --> D[Split Data: 80% Training / 20% Testing]
+  D --> E[Feature Selection: t-test, Random Forest, Correlation]
+  E --> F[Train Logistic Regression on Training Set]
+```
+Larger Number of Proteins:
+```{mermaid}
+flowchart TD
+  A[Raw Protein Data] --> B[Preprocessing: Log-Transform + Outlier Trimming]
+  B --> C[Feature Selection: t-test, Random Forest, Correlation]
+  C --> D[Select Top 10–40 Proteins]
+  D --> E[Hard Intersection of Selected Proteins]
+  E --> F[Train Logistic Regression Model]
+```
+Fuzzy Intersection:
+```{mermaid}
+flowchart TD
+  A[Raw Protein Data] --> B[Preprocessing: Log-Transform + Outlier Trimming]
+  B --> C[Feature Selection: t-test, Random Forest, Correlation]
+  C --> D[Combine Using Fuzzy Intersection]
+  D --> E[Train Logistic Regression Model]
+```
+SVM with 2 Proteins:
+```{mermaid}
+flowchart TD
+  A[Raw Protein Data] --> B[Preprocessing: Log-Transform + Outlier Trimming]
+  B --> C[Select Two Proteins: RELT, DERM]
+  C --> D[Train Support Vector Machine Classifier]
+```
+LASSO Regularization: 
+```{mermaid}
+flowchart TD
+  A[Raw Protein Data] --> B[Preprocessing: Log-Transform + Outlier Trimming]
+  B --> C[LASSO Regularization on All Proteins]
+  C --> D[Select 46 Proteins]
+  D --> E[Adjust Classification Threshold to 0.3]
+```
+
 
 # Findings
 
@@ -90,3 +135,5 @@ a\) Find a simpler panel that achieves comparable accuracy.
 The benchmarked accuracy that is from the class example is 0.774, so that is what this experiment expected to replicated. Using a function that creates combinations of 2 different proteins and feeds the data into a Support Vector Machine classifier, it is shown that a 2 protein panel that consists of RELT and DERM produce classification accuracy of 0.774, which is comparable to the in class example, which utilized a 5 protein panel and a logistic regression classifier.
 
 b\) Find an alternate panel that achieves better performing accuracy.
+
+Instead of comparing the proteins from multiple testing and random forest, the alternative method used was lasso regularization directly on the entire dataset. After shrinking the unimportant protein coefficients to 0 by finding the lambda that minimizes the mean cross validated error, we are left with a panel of 46 proteins. Additionally, the default classification threshold was adjusted from 0.5 to 0.3. Therefore the improved classification accuracy with these changes is 0.839.
