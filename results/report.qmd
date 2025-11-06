@@ -14,8 +14,6 @@ execute:
   cache: true
 ---
 
-Use this as a template. Keep the headers and remove all other text. In all, your report can be quite short. When it is complete, render and then push changes to your team repository.
-
 ```{r}
 # load any other packages and read data here
 library(tidyverse)
@@ -23,7 +21,7 @@ library(tidyverse)
 
 # Abstract
 
-Write a brief one-paragraph abstract that describes the contents of your write-up.
+This report looks at potential protein biomarkers linked to Autism Spectrum Disorder (ASD) using data from Hewitson et al. (2021). The dataset includes serum samples from 154 boys—76 with ASD and 78 typically developing (TD)—with measurements for 1,317 proteins. We recreated and extended parts of the original analysis by using t-tests, random forests, and correlations to find proteins that best separate the ASD and TD groups. Logistic regression models were then built to test how well these proteins could classify subjects. We also tested how changes in the number of top proteins, data splits, and selection methods affected results. The fuzzy intersection method performed best, reaching 0.871 accuracy and 0.954 ROC AUC. A simpler two-protein SVM model and a LASSO model with 46 proteins also showed strong results, suggesting that different modeling approaches can effectively identify useful biomarkers for ASD.
 
 # Dataset
 
