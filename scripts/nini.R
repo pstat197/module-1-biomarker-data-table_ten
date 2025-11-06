@@ -1,7 +1,4 @@
-# ===============================
-# inclass-analysis-topN.R
 # Compare top 10, 15, 20, 25, 30, 35, 40 proteins
-# ===============================
 
 library(tidyverse)
 library(randomForest)
@@ -9,9 +6,7 @@ library(tidymodels)
 library(yardstick)
 load('data/biomarker-clean.RData')
 
-# -------------------------------
 # Function: top proteins by t-test
-# -------------------------------
 get_top_ttest <- function(data, n_top = 10){
   ttests_out <- data %>%
     select(-ados) %>%
@@ -31,9 +26,7 @@ get_top_ttest <- function(data, n_top = 10){
   return(proteins)
 }
 
-# -------------------------------
 # Function: top proteins by RF
-# -------------------------------
 get_top_rf <- function(data, n_top = 10){
   predictors <- data %>% select(-c(group, ados))
   response <- factor(data$group)
@@ -47,9 +40,7 @@ get_top_rf <- function(data, n_top = 10){
   return(proteins)
 }
 
-# -------------------------------
 # Function: logistic regression & metrics
-# -------------------------------
 get_logreg_metrics <- function(data, n_top){
   # get top proteins
   proteins_star <- intersect(get_top_ttest(data, n_top), get_top_rf(data, n_top))
@@ -82,15 +73,11 @@ get_logreg_metrics <- function(data, n_top){
   return(metrics_df)
 }
 
-# -------------------------------
 # Run comparison: 10, 15, 20, 25, 30, 35, 40 proteins
-# -------------------------------
 top_list <- c(10, 15, 20, 25, 30, 35, 40)
 all_results <- map_dfr(top_list, ~ get_logreg_metrics(biomarker_clean, .x))
 
-# -------------------------------
 # Print comparison table
-# -------------------------------
 all_results %>%
   select(top_proteins, .metric, .estimate) %>%
   pivot_wider(names_from = .metric, values_from = .estimate) %>%
