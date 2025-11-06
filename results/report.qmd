@@ -63,6 +63,20 @@ The inherent expectation of evaluating metrics on unseen data may have been lean
 
 b\) Choose a larger number (more than ten) of top predictive proteins using each selection method
 
+To examine how panel size affects performance, we repeated the selection process using larger sets of top predictive proteins (10–40) based on both *t*-test and random forest importance scores. The intersection of these sets was used to fit logistic regression models, and performance was evaluated on a held-out 20% test partition.
+
+| Top Proteins | Sensitivity | Specificity | Accuracy |
+|--------------|-------------|-------------|----------|
+| 10           | 0.733       | 0.812       | 0.774    |
+| 15           | 0.800       | 0.938       | 0.871    |
+| 20           | 0.867       | 0.750       | 0.806    |
+| 25           | 0.933       | 0.750       | 0.839    |
+| 30           | 0.933       | 0.750       | 0.839    |
+| 35           | 0.933       | 0.812       | 0.871    |
+| 40           | 0.933       | 0.750       | 0.839    |
+
+Accuracy remained relatively stable across models, fluctuating between **0.77 and 0.87**, while sensitivity generally increased with more proteins. Notably, using 15 or 35 top proteins yielded the highest accuracy (0.871) with strong sensitivity and specificity balance. These results suggest that expanding the protein set can improve sensitivity to ASD cases, though gains beyond 15–20 proteins offer diminishing returns. Overall, the classifier’s performance remained comparable to the in-class analysis, indicating that the original panel size was already near optimal for this dataset.
+
 c\) Use a fuzzy intersection instead of a hard intersection to combine the sets of top predictive proteins across selection methods
 
 The results show that the Fuzzy intersection model preforms better then both Hard intersection models. Yielding the highest ROC AUC and accuracy also improving sensitivity without losing specificity. Where the Hard intersection model has high specificity but the lowest specificity and AUC. Adding proteins to the Hard model makes the sensitivity match the Fuzzy model but reduces its specificity and AUC.
