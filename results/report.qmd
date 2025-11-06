@@ -116,7 +116,7 @@ In this segment, data was split 80% training set and 20% test set before the ent
 
 -   ROC AUC ≈ 0.87
 
-The inherent expectation of evaluating metrics on unseen data may have been leaning towards lower estimates in all areas, however the above results are more indicative of the model's reasonably strong ability to identify true cases of both classes, differentiate between classes, and generate generally reliable predictions. Thus, while analysis was only carried out on a training partition, general accuracy in predictions on the test set remains high.
+The inherent expectation of evaluating metrics on unseen data may have been leaning towards lower estimates in all areas, however the above results are more indicative of the model's reasonably strong ability to identify true cases of both classes, differentiate between classes, and generate generally reliable predictions. Relative to the pre-regression partitioning methodology (in-class), these estimates across all metrics appear marginally short of the true accuracy with specificity under pre-selection partitioning performing better.Thus, while analysis was only carried out on a training partition, general accuracy in predictions on the test set remain high.
 
 b\) Choose a larger number (more than ten) of top predictive proteins using each selection method
 
