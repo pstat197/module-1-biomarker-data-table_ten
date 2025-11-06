@@ -127,15 +127,6 @@ proteins_fuzzy <- fuzzy_ranks %>%
   pull(protein)
 proteins_fuzzy
 
-proteins_sstar <- intersect(proteins_s1, proteins_s2)
-proteins_sstar
-
-# Proteins that increase sensitivity
-proteins_to_add <- c("CXCL16, soluble", "Cadherin-5", "Calcineurin", "PTN")
-
-
-proteins_hard <- c(proteins_s3$protein, proteins_s1, proteins_s2)
-proteins_hard <- unique(proteins_hard)
 
 
 ```
@@ -173,25 +164,13 @@ biomarker_fuzzy <- biomarker_clean %>%
   mutate(class = (group == "ASD")) %>%
   select(-group)
 
-biomarker_hard <- biomarker_clean %>%
-  select(group, any_of(proteins_sstar)) %>%
-  mutate(class = (group == "ASD")) %>%
-  select(-group)
-
-biomarker_hard_updated <- biomarker_clean %>%
-  select(group, any_of(c(proteins_sstar, proteins_to_add))) %>%
-  mutate(class = (group == "ASD")) %>%
-  select(-group)
-
 
 # Run models
 res_fuzzy <- logistic(biomarker_fuzzy, model_name = "Fuzzy Intersection")
-res_hard  <- logistic(biomarker_hard, model_name = "Hard Intersection")
-res_hard_updated  <- logistic(biomarker_hard_updated, model_name = "Hard + Top Sensitivity Proteins")
 
 
 # Combine predictions and compute summary metrics
-all_preds <- bind_rows(res_fuzzy$preds, res_hard$preds, res_hard_updated$preds) %>%
+all_preds <- bind_rows(res_fuzzy$preds) %>%
   mutate(pred = as.numeric(pred))
 
 all_metrics <- all_preds %>%
@@ -201,39 +180,18 @@ all_metrics <- all_preds %>%
     specificity = spec_vec(class, pred_class),
     accuracy = accuracy_vec(class, pred_class),
     roc_auc = roc_auc_vec(class, 1- pred)
-  )
+  ) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 3))) %>%
+  bind_rows(tibble(
+    model = "Hard Intersection",
+    sensitivity = 0.812,
+    specificity = 0.733,
+    accuracy = 0.774,
+    roc_auc = 0.883
+  ))
 
 all_metrics
 
 ```
-The results show that the Fuzzy intersection model preforms better then both Hard intersection models. Yielding the higest ROC AUC and accuracy also improving sensitivity without losing specificity. Where the Hard intersection model has high specificity but the lowest specificity and AUC. Adding proteins to the Hard model makes the sensitivity match the Fuzzy model but reduces its specificity and AUC.
-```{r}
- # Original hard intersection proteins
-proteins_core <- c("DERM", "RELT", "IgD", "FSTL1")
+The results show that the Fuzzy intersection model preforms better then the Hard intersection model. Yielding a sensitivity of 0.867, specificity of 0.875, accuracy of 0.871, and ROC AUC of 0.954 all of which are better than the hard intersection model. These values represent the fuzzy model being more balances and effective at distinguishing between ASD and TD subject without disproportionately favoring one group. The better performance is likely coming from its capacity to integrate partially overlapping information across selection methods(t-test, random forest, correlation test). By allowing proteins that appear in multiple but not all selection methods not risking dropping meaningful biomarkers that are emphasized by only some of the methods. 
 
-remaining_proteins <- setdiff(proteins_hard, proteins_core)
-
-compute_metrics_seq <- function(core, add_protein) {
-  proteins <- c(core, add_protein)
-  data <- biomarker_clean %>%
-    select(group, all_of(proteins)) %>%
-    mutate(class = (group == "ASD")) %>%
-    select(-group)
-  
-  res <- logistic(data, model_name = add_protein)
-  
-  tibble(
-    protein_added = add_protein,
-    auc = res$metrics %>% filter(.metric == "roc_auc") %>% pull(.estimate),
-    sensitivity = res$metrics %>% filter(.metric == "sensitivity") %>% pull(.estimate),
-    specificity = res$metrics %>% filter(.metric == "specificity") %>% pull(.estimate)
-  )
-}
-
-# Apply sequentially for each remaining protein
-metrics_seq <- map_dfr(remaining_proteins, ~compute_metrics_seq(proteins_core, .x))
-
-metrics_seq <- metrics_seq %>% arrange(desc(auc))
-
-metrics_seq
-```

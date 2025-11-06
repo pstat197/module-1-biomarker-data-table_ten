@@ -79,7 +79,7 @@ Accuracy remained relatively stable across models, fluctuating between **0.77 an
 
 c\) Use a fuzzy intersection instead of a hard intersection to combine the sets of top predictive proteins across selection methods
 
-The results show that the Fuzzy intersection model preforms better then both Hard intersection models. Yielding the highest ROC AUC and accuracy also improving sensitivity without losing specificity. Where the Hard intersection model has high specificity but the lowest specificity and AUC. Adding proteins to the Hard model makes the sensitivity match the Fuzzy model but reduces its specificity and AUC.
+The results show that the Fuzzy intersection model preforms better then the Hard intersection model. Yielding a sensitivity of 0.867, specificity of 0.875, accuracy of 0.871, and ROC AUC of 0.954 all of which are better than the hard intersection model. These values represent the fuzzy model being more balances and effective at distinguishing between ASD and TD subject without disproportionately favoring one group. The better performance is likely coming from its capacity to integrate partially overlapping information across selection methods(t-test, random forest, correlation test). By allowing proteins that appear in multiple but not all selection methods not risking dropping meaningful biomarkers that are emphasized by only some of the methods.
 
 ## Improved classifier
 
