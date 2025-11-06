@@ -1,7 +1,7 @@
 ---
 title: "Biomarkers of ASD"
 subtitle: "If you want a subtitle put it here"
-author: "List names here"
+author: "Brooks Piper, Srinidhi Satish, Adarsh Nagar, Nicole Xu, Quenlan, Nini"
 date: last-modified
 published-title: "Updated"
 editor: visual
@@ -27,11 +27,9 @@ Write a brief one-paragraph abstract that describes the contents of your write-u
 
 # Dataset
 
-Write a brief data description, including: how data were obtained; sample characteristics; variables measured; and data preprocessing. This can be largely based on the source paper and should not exceed 1-2 paragraphs.
+This data set was derived from Hewitson et al. (2021), observing and measuring Serum samples from a populous of 154 individuals comprised of 76 boys with ASD and 78 typically developing (TD) boys all between the ages of 18 months to 8 years. While each sample should appropriately analyze 1,125 proteins (since 192 of the 1,317 failed quality control), the exact proteins were left unidentified in the published study yielding following analyses based on the whole populous (1,317).Here, the two primary variable measurements are Autism Diagnostic Observation Schedule Scores (ADOS) and patient-attributed protein levels.
 
-This dataset was derived from Hewitson et al. (2021), observing and measuring Serum samples from a populous of 154 individuals comprised of 76 boys with ASD and 78 typically developing (TD) boys all between the ages of 18 months to 8 years. While each sample should appropriately analyze 1,125 proteins (since 192 of the 1,317 failed quality control), the exact proteins were left unidentified in the published study yielding following analyses based on the whole populous (1,317).Here, the two primary variable measurments are Autism Diagnostic Observation Schedule Scores (ADOS) and patient-attributed protein levels. 
-
-Prior to statistical testing, minor augmentations and adjustments were made in the preprocessing phase. Here, 'V1' is rewritten as 'name', 'V2' is rewritten as 'abbreviation', and all NA-named proteins are dropped. As a means to further clean the dataset, columns with NAs are dropped to reduce sparsity, outliers are trimmed to reduce estimation-related abnormalities further in analysis, and protein levels are log transformed to standardize comparative data.
+Prior to statistical testing, minor augmentations and adjustments were made in the preprocessing phase. Here, 'V1' is rewritten as 'name', 'V2' is rewritten as 'abbreviation', and all NA-named proteins are dropped. As a means to further clean the data set, columns with NA's are dropped to reduce sparsity, outliers are trimmed to reduce estimation-related abnormalities further in analysis, and protein levels are log transformed to standardize comparative data.
 
 # Summary of published analysis
 
@@ -50,6 +48,18 @@ Aside from non-normal, skewed data, outliers are also present. To investigate pa
 ## Methodological variations
 
 a\) Repeat the analysis but carry out the entire selection procedure on a training partition
+
+In this segment, data was split 80% training set and 20% test set before the entire selection procedure, performing statistical analyses and logistic regression model-fitting on training data prior to a final comparison with the unused test set. Test evaluation metrics yielded the following:
+
+-   Sensitivity = 0.75
+
+-   Specificity = 0.80
+
+-   Accuracy ≈ 0.77
+
+-   ROC AUC ≈ 0.87
+
+The inherent expectation of evaluating metrics on unseen data may have been leaning towards lower estimates in all areas, however the above results are more indicative of the model's reasonably strong ability to identify true cases of both classes, differentiate between classes, and generate generally reliable predictions. Thus, while analysis was only carried out on a training partition, general accuracy in predictions on the test set remains high.
 
 b\) Choose a larger number (more than ten) of top predictive proteins using each selection method
 
