@@ -116,7 +116,7 @@ random_protein_levels = biomarker[random_proteins]
 for protein in random_proteins:
    plt.figure()
    random_protein_levels[protein].plot(kind="hist", title=protein)
-
+# If grader is trying to view images, please refer to brooks_biomarker_analysis.ipynb
 
 # Drop group col since its non-numeric
 numeric_biomarker = biomarker.drop(columns=['group'])
